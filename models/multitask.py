@@ -54,7 +54,7 @@ class MultiTaskPerceptionModel(nn.Module):
         decoder_modules=['upsample1', 'conv1', 'upsample2', 'conv2', 'upsample3', 'conv3', 'upsample4', 'conv4', 'upsample5', 'output_conv']
         for name in decoder_modules:
             module=getattr(self, name)
-            sd={k.replace(f'{name}', ''):v for k, v in unet_sd.items() if k.startswith(f'{name}.')}
+            sd={k.replace(f'{name}.', ''):v for k, v in unet_sd.items() if k.startswith(f'{name}.')}
             module.load_state_dict(sd, strict=True)
 
     def forward(self, x):
