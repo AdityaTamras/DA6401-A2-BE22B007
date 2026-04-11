@@ -349,7 +349,7 @@ def train_multitask(args):
     train_loader, val_loader, _ = make_dataloaders(args, task='multitask')
  
     model = MultiTaskPerceptionModel(
-        num_breeds= 37,
+        num_classes= 37,
         seg_classes=3,
         in_channels=3,
         classifier_path=f'{args.checkpoint_dir}/classifier.pth',

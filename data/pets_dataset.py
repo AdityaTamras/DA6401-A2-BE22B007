@@ -169,6 +169,8 @@ class OxfordIIITPetDataset(Dataset):
         result=self.transform(**kwargs)
         image_tensor=result['image']
         mask_tensor=result.get('mask')
+        if mask_tensor is not None:
+            mask_tensor=mask_tensor.long()
 
         out={'image': image_tensor, 'label': label}
         if self.task in ('detection', 'multitask'):
