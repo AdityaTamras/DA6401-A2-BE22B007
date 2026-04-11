@@ -7,6 +7,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import wandb
 import time
+from sklearn.metrics import accuracy_score, f1_score
 from data.pets_dataset import OxfordIIITPetDataset
 from models.classification import VGG11Classifier
 from models.localization import VGG11Localizer
@@ -159,40 +160,35 @@ def train_classification(args):
             best_val_acc=val_acc
             save_checkpoint(model.encoder.state_dict(), f'{args.checkpoint_dir}/encoder_best.pth')
             save_checkpoint(model.state_dict(), f'{args.checkpoint_dir}/classifier.pth')
-            print(f"[Epoch {epoch+1}/{args.epochs}] " f"train_loss={train_loss:.4f} train_acc={train_acc:.2f}% " f"val_acc={val_acc:.2f}%")
+        print(f"[Epoch {epoch+1}/{args.epochs}] " f"train_loss={train_loss:.4f} train_acc={train_acc:.2f} " f"val_acc={val_acc:.2f}")
     # wandb.finish()
 
 def train_one_epoch_cls(model, loader, criterion, optimizer, device):
     model.train()
     running_loss=0.0
-    total=0
-    correct=0
+    all_preds=[]
+    all_labels=[]
     for i, batch in enumerate(loader):
-        start=time.time()
-        print(f"Batch {i} start")
         images=batch['image'].to(device)
         labels=batch['label'].to(device)
-        print("images and labels are loaded")
         optimizer.zero_grad()
         logits=model(images)
         loss=criterion(logits, labels)
         loss.backward()
         optimizer.step()
-        print(f"Batch {i} done in {time.time() - start:.2f} sec")
         running_loss+=loss.item()
         preds=logits.argmax(dim=1)
-        total+=labels.size(0)
-        correct+=(preds==labels).sum().item()
+        all_preds.extend(preds.cpu().numpy())
+        all_labels.extend(labels.cpu().numpy())
     avg_loss=running_loss/len(loader)
-    avg_accuracy=100*correct/total
-    print("Hello world")
+    avg_accuracy=accuracy_score(all_preds, all_labels)
     return avg_loss, avg_accuracy
 
 def evaluate_cls(model, loader, criterion, device):
     model.eval()
     running_loss=0.0
-    total=0
-    correct=0
+    all_preds=[]
+    all_labels=[]
     with torch.no_grad():
         for batch in loader:
             images=batch['image'].to(device)
@@ -201,11 +197,11 @@ def evaluate_cls(model, loader, criterion, device):
             loss=criterion(logits, labels)
             running_loss+=loss.item()
             preds=logits.argmax(dim=1)
-            total+=labels.size(0)
-            correct+=(preds==labels).sum().item()
+            all_preds.extend(preds.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
         avg_loss=running_loss/len(loader)
-    avg_accuracy=100*correct/total
-    return avg_accuracy
+        avg_accuracy=accuracy_score(all_preds, all_labels)
+    return avg_loss, avg_accuracy
 
 def train_detection(args):
     # wandb.init(project=args.wandb_project, name=args.wandb_run_name, config=vars(args))
