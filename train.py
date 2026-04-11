@@ -146,7 +146,7 @@ def train_classification(args):
     best_val_acc=-1.0
     for epoch in range(args.epochs):
         train_loss, train_acc = train_one_epoch_cls(model, train_loader, criterion, optim, device)
-        val_loss, val_acc = evaluate_cls(model, val_loader, criterion, device)
+        val_loss, val_acc, f1_score = evaluate_cls(model, val_loader, criterion, device)
         scheduler.step()
         # wandb.log({
         #     "train/cls_loss": train_loss,
@@ -160,7 +160,7 @@ def train_classification(args):
             best_val_acc=val_acc
             save_checkpoint(model.encoder.state_dict(), f'{args.checkpoint_dir}/encoder_best.pth')
             save_checkpoint(model.state_dict(), f'{args.checkpoint_dir}/classifier.pth')
-        print(f"[Epoch {epoch+1}/{args.epochs}] " f"train_loss={train_loss:.4f} train_acc={train_acc:.2f} " f"val_acc={val_acc:.2f}")
+        print(f"[Epoch {epoch+1}/{args.epochs}] " f"train_loss={train_loss:.4f} train_acc={train_acc:.2f} " f"val_acc={val_acc:.2f}" f"f1_score={f1_score:2f}")
     # wandb.finish()
 
 def train_one_epoch_cls(model, loader, criterion, optimizer, device):
@@ -182,6 +182,7 @@ def train_one_epoch_cls(model, loader, criterion, optimizer, device):
         all_labels.extend(labels.cpu().numpy())
     avg_loss=running_loss/len(loader)
     avg_accuracy=accuracy_score(all_preds, all_labels)
+    f1_score=f1_score(all_preds, all_labels)
     return avg_loss, avg_accuracy
 
 def evaluate_cls(model, loader, criterion, device):
