@@ -10,9 +10,9 @@ class MultiTaskPerceptionModel(nn.Module):
     def __init__(self, num_classes=37, seg_classes=3, in_channels=3, classifier_path="classifier.pth", localizer_path="localizer.pth", unet_path="unet.pth"):
         super(MultiTaskPerceptionModel, self).__init__()
 
-        gdown.download(id="classifier.pth drive id", output=classifier_path, quiet=False)
-        gdown.download(id="localizer.pth drive id", output=localizer_path, quiet=False)
-        gdown.download(id="unet.pth drive id", output=unet_path, quiet=False)
+        gdown.download(id="132paVujknP9OYY2qOia3Hmag-Ceds3Yg", output=classifier_path, quiet=False)
+        gdown.download(id="1u8Amzx7kXeI8ZWUO0rC_ftJxZgedHm_o", output=localizer_path, quiet=False)
+        gdown.download(id="1mCFszCIWK6wc457m7H7thHXV6ZgMEkAp", output=unet_path, quiet=False)
 
         self.encoder=VGG11Encoder(in_channels=in_channels)
         self.cls_head=ClassificationHead(num_classes=num_classes)
