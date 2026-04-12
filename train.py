@@ -26,14 +26,13 @@ def get_args():
     parser.add_argument('--lr', type=float, default=1e-3, help='Initial learning rate')
     parser.add_argument('--dropout_p', type=float, default=0.5, help='CustomDropout probability')
     parser.add_argument('--img_size', type=int, default=224, help='Image size for resizing')
-    parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--num_workers', type=int, default=4, help='DataLoader worker processes')
     parser.add_argument('--freeze_strategy', type=str, choices=['frozen', 'partial', 'full'], default='full', help='Backbone freeze strategy for detection and segmentation')
     parser.add_argument('--encoder_path', type=str, default='checkpoints/encoder_best.pth', help='Path to pretrained encoder weights')
     parser.add_argument('--wandb_entity', type=str, default='be22b007-iitmadras', help='Wandb entity name')
-    # parser.add_argument('--wandb_project', type=str, default='DA6401-A2', help='Wandb Project Name')
-    # parser.add_argument('--wandb_run_name', type=str, default=None, help='W&B run name')
-    # parser.add_argument('--seed', type=int, default=42, help='Global random seed')
+    parser.add_argument('--wandb_project', type=str, default='DA6401-A2', help='Wandb Project Name')
+    parser.add_argument('--wandb_run_name', type=str, default=None, help='W&B run name')
+    parser.add_argument('--seed', type=int, default=42, help='Global random seed')
     parser.add_argument('--lambda_cls', type=float, default=1.0, help='Multitask loss weight for classification')
     parser.add_argument('--lambda_loc', type=float, default=1.0, help='Multitask loss weight for localization')
     parser.add_argument('--lambda_seg', type=float, default=1.0, help='Multitask loss weight for segmentation')
@@ -147,7 +146,7 @@ def train_classification(args):
     best_val_acc=-1.0
     for epoch in range(args.epochs):
         train_loss, train_acc = train_one_epoch_cls(model, train_loader, criterion, optim, device)
-        val_loss, val_acc, f1_score = evaluate_cls(model, val_loader, criterion, device)
+        val_loss, val_acc = evaluate_cls(model, val_loader, criterion, device)
         scheduler.step()
         wandb.log({
             "train/cls_loss": train_loss,
@@ -161,7 +160,7 @@ def train_classification(args):
             best_val_acc=val_acc
             save_checkpoint(model.encoder.state_dict(), f'{args.checkpoint_dir}/encoder_best.pth')
             save_checkpoint(model.state_dict(), f'{args.checkpoint_dir}/classifier.pth')
-        print(f"[Epoch {epoch+1}/{args.epochs}] " f"train_loss={train_loss:.4f} train_acc={train_acc:.2f} " f"val_acc={val_acc:.2f} " f"f1_score={f1_score:2f}")
+        print(f"[Epoch {epoch+1}/{args.epochs}] " f"train_loss={train_loss:.4f} train_acc={train_acc:.2f} " f"val_acc={val_acc:.2f} ")
     wandb.finish()
 
 def train_one_epoch_cls(model, loader, criterion, optimizer, device):
@@ -183,7 +182,6 @@ def train_one_epoch_cls(model, loader, criterion, optimizer, device):
         all_labels.extend(labels.cpu().numpy())
     avg_loss=running_loss/len(loader)
     avg_accuracy=accuracy_score(all_preds, all_labels)
-    f1_score=f1_score(all_preds, all_labels, average='macro', zero_division=0)
     return avg_loss, avg_accuracy
 
 def evaluate_cls(model, loader, criterion, device):
@@ -274,7 +272,7 @@ def evaluate_det(model, loader, iou_loss, device):
 
 
 def train_segmentation(args):
-    # wandb.init(project=args.wandb_project, name=args.wandb_run_name, config=vars(args))
+    wandb.init(entity=args.wandb_entity, project=args.wandb_project, name=args.wandb_run_name, config=vars(args))
     set_seed(args.seed)
     device = get_device()
     train_loader, val_loader, _ = make_dataloaders(args, task='segmentation')
@@ -295,21 +293,21 @@ def train_segmentation(args):
         val_loss, val_dice=evaluate_seg(model, val_loader, seg_loss_fn, device)
         scheduler.step()
 
-        # wandb.log({
-        #     'train/seg_loss':   train_loss,
-        #     'train/dice_score': train_dice,
-        #     'val/seg_loss': val_loss,
-        #     'val/dice_score': val_dice,
-        #     'lr': scheduler.get_last_lr()[0],
-        #     'epoch': epoch
-        # })
+        wandb.log({
+            'train/seg_loss':   train_loss,
+            'train/dice_score': train_dice,
+            'val/seg_loss': val_loss,
+            'val/dice_score': val_dice,
+            'lr': scheduler.get_last_lr()[0],
+            'epoch': epoch
+        })
 
         if val_dice>best_val_dice:
             best_val_dice=val_dice
             save_checkpoint(model.state_dict(), f'{args.checkpoint_dir}/unet.pth')
  
         print(f"[Epoch {epoch+1}/{args.epochs}] " f"train_loss={train_loss:.4f} val_dice={val_dice:.4f}")
-    # wandb.finish()
+    wandb.finish()
  
 def train_one_epoch_seg(model, loader, seg_loss_fn, optimizer, device):
     model.train()
