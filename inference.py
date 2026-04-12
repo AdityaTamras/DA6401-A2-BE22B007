@@ -28,9 +28,10 @@ def get_args():
     parser = argparse.ArgumentParser(description="DA6401 Assignment 2 Inference")
 
     parser.add_argument('--mode', type=str, choices=['evaluate', 'predict', 'feature_maps'], default='evaluate')
-    parser.add_argument('--classifier_path', type=str, default='checkpoints/classifier_best.pth')
-    parser.add_argument('--localizer_path', type=str, default='checkpoints/localizer_best.pth')
-    parser.add_argument('--unet_path', type=str, default='checkpoints/unet_best.pth')
+    parser.add_argument('--log_mode', type=str, choices=['all', 'detection', 'segmentation'], default='all')
+    parser.add_argument('--classifier_path', type=str, default='checkpoints/classifier.pth')
+    parser.add_argument('--localizer_path', type=str, default='checkpoints/localizer.pth')
+    parser.add_argument('--unet_path', type=str, default='checkpoints/unet.pth')
 
     parser.add_argument('--data_root', type=str, default='data')
     parser.add_argument('--batch_size', type=int, default=32)
@@ -207,10 +208,12 @@ def run_evaluate(args):
         'test/dice_score'  : dice_score,
         'test/pixel_acc'   : pixel_acc,
     })
- 
-    log_detection_table(table_images, table_pred_boxes, table_gt_boxes, table_ious, table_breeds, args.img_size)
     
-    log_segmentation_samples(seg_sample_imgs, seg_sample_gt, seg_sample_pred)
+    if args.log_mode in ('all', 'detection'):
+        log_detection_table(table_images, table_pred_boxes, table_gt_boxes, table_ious, table_breeds, args.img_size)
+    
+    if args.log_mode in ('all', 'segmentation'):
+        log_segmentation_samples(seg_sample_imgs, seg_sample_gt, seg_sample_pred)
  
     wandb.finish()
 
