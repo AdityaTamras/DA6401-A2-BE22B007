@@ -29,7 +29,7 @@ def get_args():
     parser.add_argument('--num_workers', type=int, default=4, help='DataLoader worker processes')
     parser.add_argument('--freeze_strategy', type=str, choices=['frozen', 'partial', 'full'], default='full', help='Backbone freeze strategy for detection and segmentation')
     parser.add_argument('--encoder_path', type=str, default='checkpoints/encoder_best.pth', help='Path to pretrained encoder weights')
-    parser.add_argument('--wandb_entity', type=str, default='be22b007-iitmadras', help='Wandb entity name')
+    parser.add_argument('--wandb_entity', type=str, default='be22b007-iit-madras', help='Wandb entity name')
     parser.add_argument('--wandb_project', type=str, default='DA6401-A2', help='Wandb Project Name')
     parser.add_argument('--wandb_run_name', type=str, default=None, help='W&B run name')
     parser.add_argument('--seed', type=int, default=42, help='Global random seed')
